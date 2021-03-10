@@ -1,0 +1,26 @@
+{
+    "name": "hejinlong/yunce-data",
+    "authors": [
+        {
+            "name": "hejinlong",
+            "email": "hejinlong@testin.cn"
+        }
+    ],
+    "require": {
+        "netresearch/jsonmapper": "*",
+        "adbario/php-dot-notation": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "YunceData\\": "src",
+            "YunceData\\Model\\": "src/model",
+            "YunceData\\Components\\": "src/component"
+        }
+    },
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://mirrors.aliyun.com/composer/"
+        }
+    }
+}
