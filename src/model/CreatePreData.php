@@ -119,7 +119,6 @@ class CreatePreData extends YunceData
                 $toolArr["propMap"][$property->pname] = [
                     "pcode" => $property->pcode,
                     "pname" => $property->pname,
-                    "is_check_all" => $property->is_check_all,
                     "is_check_all" => isset($property->is_check_all) ? $property->is_check_all : false,
                     "childrenProp" => $this->propertyPrepare($property)//对每一个一级属性下的属性做整理，供查询使用
                 ];
