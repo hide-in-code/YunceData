@@ -366,6 +366,11 @@ class CreatePreData extends YunceData
                 }
             }
 
+            //必须配置point字段
+            if (!isset($item["point"])) {
+                throw new \Exception("必须要配置point字段");
+            }
+
             if (isset($item["point"])) {
                 $tmp["point"] = $item["point"];
             } elseif ($item["points"]) {
