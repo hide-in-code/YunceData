@@ -109,7 +109,7 @@ class CreatePreData extends YunceData
         foreach ($conf->properties as $toolProperty) {
             $toolArr = [
                 "tool" => $toolProperty->toolType,
-                "parentCheckAll" => $toolProperty->is_check_all,
+                "parentCheckAll" => isset($toolProperty->is_check_all) ? $toolProperty->is_check_all : false,
                 "propMap" => []
             ];
 
@@ -120,6 +120,7 @@ class CreatePreData extends YunceData
                     "pcode" => $property->pcode,
                     "pname" => $property->pname,
                     "is_check_all" => $property->is_check_all,
+                    "is_check_all" => isset($property->is_check_all) ? $property->is_check_all : false,
                     "childrenProp" => $this->propertyPrepare($property)//对每一个一级属性下的属性做整理，供查询使用
                 ];
             }
