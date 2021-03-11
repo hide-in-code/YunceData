@@ -144,7 +144,7 @@ class CreatePreData extends YunceData
         }
 
         if (!in_array($mark["tool"], $this->toolArr)) {
-            throw new \Exception("配置里面未设置该工具：" . $mark["tool"]);
+            throw new \Exception("配置里未设置该工具：" . $mark["tool"]);
         }
 
         if (!isset($mark["props"])) {
@@ -185,6 +185,7 @@ class CreatePreData extends YunceData
                 echo $e->getMessage() . PHP_EOL;
                 echo "您配置的内容：" . PHP_EOL;
                 echo json_encode($mark, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+                throw new \Exception("notice!!!");//抛异常，使上层捕获
                 exit();
             }
         }
@@ -304,6 +305,7 @@ class CreatePreData extends YunceData
                 echo "对应一级属性：" . $rootPname . PHP_EOL;
                 echo "未找到的预导入对应规则为：" . implode(",", $propStringArr) . PHP_EOL;
                 echo "已找到相关配置，供参考：" . json_encode($propArrByParentCode) . PHP_EOL;
+                throw new \Exception("notice!!!");//抛异常，使上层捕获
                 exit();
             }
         }
@@ -333,7 +335,6 @@ class CreatePreData extends YunceData
             $tmp["type"] = $item["tool"];
             $tmp["property"] = $this->createProperties($item["props"], $tmp["type"]);
 
-
             //OCR任务
             if ($this->taskType == YunceData::TASK_TYPE_OCR) {
                 if (!isset($item["content"])) {
@@ -349,7 +350,26 @@ class CreatePreData extends YunceData
                     throw new \Exception("配置了矩形工具时必须要配置point字段");
                 }
 
+                if (array_keys($item["point"]) != ["left", "top", "right", "bottom"]) {
+                    throw new \Exception('矩形工具必须按照这样配置：["left" => 123, "top" => 123, "right" => 123, "bottom" => 123]');
+                }
+            }
+
+            //特征点
+            if ($item["tool"] == "point") {
+                if (!isset($item["point"])) {
+                    throw new \Exception("配置了特征点时必须要配置point字段");
+                }
+
+                if (array_keys($item["point"]) != ["x", "y"]) {
+                    throw new \Exception('矩形工具必须按照这样配置：["x" => 123, "y"  => 123]');
+                }
+            }
+
+            if (isset($item["point"])) {
                 $tmp["point"] = $item["point"];
+            } elseif ($item["points"]) {
+                $tmp["points"] = $item["points"];
             }
 
             $ret["marks"][] = $tmp;
