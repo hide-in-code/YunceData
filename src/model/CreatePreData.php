@@ -148,7 +148,7 @@ class CreatePreData extends YunceData
         }
 
         if (!isset($mark["props"])) {
-            throw new \Exception("未设置预导入数据的属性");
+            throw new \Exception("未设置预导入数据的属性, 如果不需要设置属性，请将props字段设置为[]");
         }
 
         //todo:对于不同的工具类型和不同的任务类型，此处的用户输入需要做不同的约束，慢慢完善，可以考虑用jsonSchema文件验证
@@ -333,48 +333,155 @@ class CreatePreData extends YunceData
         foreach ($arr["marks"] as $item) {
             $tmp = [];
             $tmp["type"] = $item["tool"];
-            $tmp["property"] = $this->createProperties($item["props"], $tmp["type"]);
 
-            //OCR任务
-            if ($this->taskType == YunceData::TASK_TYPE_OCR) {
-                if (!isset($item["content"])) {
-                    throw new \Exception("ocr任务必须设置content, 没有内容请填空");
-                }
-
-                $tmp["content"] = $item["content"];
+            if (!isset($item["props"])) {
+                throw new \Exception("{$item["tool"]}未设置属性，如果不需要设置属性，请将字段设置为[]");
             }
 
-            //矩形工具
-            if ($item["tool"] == "rect") {
+            $tmp["property"] = $this->createProperties($item["props"], $tmp["type"]);
+
+            //矩形工具 椭圆
+            if (in_array($item["tool"], ["rect", "ellipse"])) {
                 if (!isset($item["point"])) {
-                    throw new \Exception("配置了矩形工具时必须要配置point字段");
+                    throw new \Exception("配置了{$item["tool"]}时必须要配置point字段");
                 }
 
-                if (array_keys($item["point"]) != ["left", "top", "right", "bottom"]) {
-                    throw new \Exception('矩形工具必须按照这样配置：["left" => 123, "top" => 123, "right" => 123, "bottom" => 123]');
+                $keys = array_keys($item["point"]);
+                $check_keys = ["left", "top", "right", "bottom"];
+
+                sort($keys);
+                sort($check_keys);
+                if ($keys != $check_keys) {
+                    throw new \Exception($item["tool"] . '必须按照这样配置：["left" => 123, "top" => 123, "right" => 123, "bottom" => 123]');
                 }
+
+                $tmp["point"] =  $item["point"];
             }
 
             //特征点
             if ($item["tool"] == "point") {
                 if (!isset($item["point"])) {
-                    throw new \Exception("配置了特征点时必须要配置point字段");
+                    throw new \Exception("配置了point时必须要配置point字段");
                 }
 
                 if (array_keys($item["point"]) != ["x", "y"]) {
-                    throw new \Exception('矩形工具必须按照这样配置：["x" => 123, "y"  => 123]');
+                    throw new \Exception('point必须按照这样配置：["x" => 123, "y"  => 123]');
                 }
+
+                $tmp["point"] =  $item["point"];
             }
 
-            //必须配置point字段
-            if (!isset($item["point"])) {
-                throw new \Exception("必须要配置point字段");
+            //多边形，平行四边形， 线段， 曲线
+            if (in_array($item["tool"], ["polygon", "parallel", "line", "curve"])) {
+                if (!isset($item["point"])) {
+                    throw new \Exception("{$item["tool"]}必须要配置point字段");
+                }
+
+                foreach ($item["point"] as $pointItem) {
+                    $keys = array_keys($pointItem);
+                    $check_keys = ["x", "y"];
+                    sort($keys);
+                    sort($check_keys);
+                    if ($keys != $check_keys) {
+                        throw new \Exception($item["tool"] . '必须按照这样配置：[["x" => 123, "y" => 123],["x" => 123, "y" => 123]]');
+                    }
+                }
+
+                if ($item["tool"] == "parallel") {
+                    if (count($item["point"]) != 4) {
+                        throw new \Exception("parallel 的point长度必须为4");
+                    }
+                }
+
+                $tmp["point"] =  $item["point"];
             }
 
-            if (isset($item["point"])) {
-                $tmp["point"] = $item["point"];
-            } elseif ($item["points"]) {
-                $tmp["points"] = $item["points"];
+            //日形框
+            if ($item["tool"] == "cuboid") {
+                if (!isset($item["finshPoints"])) {
+                    throw new \Exception("cuboid必须要配置finshPoints字段");
+                }
+
+                if (!isset($item["point"])) {
+                    throw new \Exception("cuboid必须要配置point字段");
+                }
+
+                foreach ($item["point"] as $pointItem) {
+                    $keys = array_keys($pointItem);
+                    $check_keys = ["x", "y"];
+                    sort($keys);
+                    sort($check_keys);
+                    if ($keys != $check_keys) {
+                        throw new \Exception('cuboid point 必须按照这样配置：[["x" => 123, "y" => 123],["x" => 123, "y" => 123]]');
+                    }
+                }
+
+                foreach ($item["finshPoints"] as $pointItem) {
+                    $keys = array_keys($pointItem);
+                    $check_keys = ["x", "y"];
+                    sort($keys);
+                    sort($check_keys);
+                    if ($keys != $check_keys) {
+                        throw new \Exception('cuboid finshPoints 必须按照这样配置：[["x" => 123, "y" => 123],["x" => 123, "y" => 123]]');
+                    }
+                }
+
+                if (count($item["point"]) != 6) {
+                    throw new \Exception('cuboid point 必须是6个点');
+                }
+
+                if (count($item["finshPoints"]) != 4) {
+                    throw new \Exception('cuboid finshPoints 必须是4个点');
+                }
+
+                $tmp["point"] =  $item["point"];
+                $tmp["finshPoints"] =  $item["finshPoints"];
+            }
+
+            //3D矩形
+            if ($item['tool'] == "3drect") {
+                if (!isset($item["back"])) {
+                    throw new \Exception("3drect 必须配置back字段");
+                }
+
+                if (!isset($item["front"])) {
+                    throw new \Exception("3drect 必须配置front字段");
+                }
+
+                foreach ($item["back"] as $pointItem) {
+                    $keys = array_keys($pointItem);
+                    $check_keys = ["x", "y"];
+                    sort($keys);
+                    sort($check_keys);
+                    if ($keys != $check_keys) {
+                        throw new \Exception('3drect back 必须按照这样配置：[["x" => 123, "y" => 123],["x" => 123, "y" => 123]]');
+                    }
+                }
+
+                foreach ($item["front"] as $pointItem) {
+                    $keys = array_keys($pointItem);
+                    $check_keys = ["x", "y"];
+                    sort($keys);
+                    sort($check_keys);
+                    if ($keys != $check_keys) {
+                        throw new \Exception('3drect back 必须按照这样配置：[["x" => 123, "y" => 123],["x" => 123, "y" => 123]]');
+                    }
+                }
+
+                if (count($item["back"]) != 4) {
+                    throw new \Exception("3drect back 长度必须为4");
+                }
+
+                if (count($item["front"]) != 4) {
+                    throw new \Exception("3drect front 长度必须为4");
+                }
+
+                $tmp["front"] =  $item["front"];
+                $tmp["back"] =  $item["back"];
+            }
+
+            if (isset($item["content"])) {
+                $tmp["content"] = $item["content"];
             }
 
             $ret["marks"][] = $tmp;
